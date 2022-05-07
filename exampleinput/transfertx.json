@@ -1,0 +1,6 @@
+{ 
+    "asset": "GEM", 
+    "from": "user1", 
+    "to": "user2", 
+    "amount": 100
+}

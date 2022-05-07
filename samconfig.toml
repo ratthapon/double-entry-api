@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "double-entry-api"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1eq405gbxcgg0"
+s3_prefix = "double-entry-api"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+disable_rollback = true

@@ -1,0 +1,232 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  double-entry-api
+
+  Sample SAM Template for double-entry-api
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  # MyCognitoUserPool:
+  #   Type: AWS::Cognito::UserPool
+  #   Properties:
+  #     UserPoolName: !Ref CognitoUserPoolName
+  #     Policies:
+  #       PasswordPolicy:
+  #         MinimumLength: 8
+  #     UsernameAttributes:
+  #       - email
+  #     Schema:
+  #       - AttributeDataType: String
+  #         Name: email
+  #         Required: false
+
+  # MyCognitoUserPoolClient:
+  #   Type: AWS::Cognito::UserPoolClient
+  #   Properties:
+  #     UserPoolId: !Ref MyCognitoUserPool
+  #     ClientName: !Ref CognitoUserPoolClientName
+  #     GenerateSecret: false
+
+  CurrencyTransfer:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: currency-transfer/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CurrencyTransfer:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /currency/transfer
+            Method: POST
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TransactionTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TRANSACTION_TABLE: !Ref TransactionTable
+
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+
+  CurrencyFund:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: currency-fund/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CurrencyFund:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /currency/fund
+            Method: POST
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TransactionTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TRANSACTION_TABLE: !Ref TransactionTable
+
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+          
+  CurrencyTransactions:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: currency-transactions/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CurrencyTransactions:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /currency/transactions
+            Method: GET
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TransactionTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TRANSACTION_TABLE: !Ref TransactionTable
+
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+
+  CurrencyBalance:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: currency-balance/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        CurrencyBalance:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /currency/balance
+            Method: GET
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the SampleTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TransactionTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TRANSACTION_TABLE: !Ref TransactionTable
+
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+
+  TransactionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: TransactionTable
+      AttributeDefinitions:
+        - AttributeName: txid
+          AttributeType: S
+        - AttributeName: owner
+          AttributeType: S
+        - AttributeName: assetName
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: N
+        - AttributeName: amount
+          AttributeType: N
+        - AttributeName: account
+          AttributeType: S
+        - AttributeName: entryType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: txid
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
+  # TransactionTable:
+  #   Type: AWS::Serverless::SimpleTable
+  #   Properties:
+  #     PrimaryKey:
+  #       Name: txid
+  #       Type: String
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 2
+  #       WriteCapacityUnits: 2
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  CurrencyTransferAPI:
+    Description: "CurrencyTransfer API Gateway"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/currency/transfer"
+  CurrencyTransfer:
+    Description: "CurrencyTransfer Function"
+    Value: !GetAtt CurrencyTransfer.Arn
+    
+  CurrencyFundAPI:
+    Description: "CurrencyFund API Gateway"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/currency/fund"
+  CurrencyFund:
+    Description: "CurrencyFund Function"
+    Value: !GetAtt CurrencyFund.Arn
+
+  CurrencyTransactionsAPI:
+    Description: "CurrencyTransactions API Gateway"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/currency/transactions"
+  CurrencyTransactions:
+    Description: "CurrencyTransactions API"
+    Value: !GetAtt CurrencyTransactions.Arn
+
+  CurrencyBalanceAPI:
+    Description: "CurrencyBalance API Gateway"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/currency/balance"
+  CurrencyBalance:
+    Description: "CurrencyBalance API"
+    Value: !GetAtt CurrencyBalance.Arn
+
+  # CurrencyFunctionIamRole:
+  #   Description: "Implicit IAM Role created for CurrencyFunction"
+  #   Value: !GetAtt CurrencyFunctionRole.Arn
